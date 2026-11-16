@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>🎄 圣诞快乐 · 小涵</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    background: radial-gradient(120% 90% at 50% 0%, #14355f 0%, #1c1f4d 35%, #3a0d3f 70%, #6b0f1a 100%);
+    color: #fff;
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 60px;
+  }
+
+  /* 飘落的雪花 */
+  #snow { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .snowflake {
+    position: absolute; top: -40px; color: #fff; user-select: none; pointer-events: none;
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); }
+    25%  { transform: translateY(30vh) translateX(-18px) rotate(90deg); }
+    50%  { transform: translateY(60vh) translateX(14px) rotate(180deg); }
+    75%  { transform: translateY(85vh) translateX(-10px) rotate(270deg); }
+    100% { transform: translateY(115vh) translateX(6px) rotate(360deg); }
+  }
+
+  /* 漂浮装饰 */
+  .deco { position: fixed; z-index: 1; pointer-events: none; user-select: none; opacity: .75; animation: float 5s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+
+  .wrap { position: relative; z-index: 2; max-width: 480px; margin: 0 auto; padding: 34px 18px 20px; text-align: center; }
+
+  .title {
+    font-size: 30px; font-weight: 800; letter-spacing: 2px;
+    background: linear-gradient(180deg, #ffe9a8 0%, #ffd76a 45%, #ffb347 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 24px rgba(255, 200, 90, .35);
+    animation: glow 2.4s ease-in-out infinite;
+  }
+  @keyframes glow { 0%,100% { filter: drop-shadow(0 0 6px rgba(255,210,110,.5)); } 50% { filter: drop-shadow(0 0 18px rgba(255,210,110,.9)); } }
+
+  .subtitle { margin-top: 10px; font-size: 15px; color: #f7e3c3; letter-spacing: 1px; }
+  .subtitle b { color: #ffd76a; }
+
+  .tree { font-size: 44px; margin: 6px 0 2px; animation: float 3.6s ease-in-out infinite; }
+
+  /* 礼物区域 */
+  .gifts { display: flex; justify-content: center; gap: 14px; margin-top: 34px; }
+  .gift {
+    flex: 1; max-width: 128px; cursor: pointer; position: relative;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px; padding: 16px 8px 14px;
+    transition: transform .25s, box-shadow .25s, opacity .25s;
+  }
+  .gift:active { transform: scale(.94); }
+  .gift .box { font-size: 56px; display: block; line-height: 1; transition: transform .3s; }
+  .gift .label { display: block; margin-top: 8px; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+  .gift .sub { display: block; margin-top: 2px; font-size: 11px; color: #e9d5a8; }
+
+  /* 未解锁状态 */
+  .gift.locked { opacity: .42; cursor: not-allowed; filter: grayscale(.6); }
+  .gift.locked .box { filter: grayscale(1); }
+  .gift .lock-ico { position: absolute; top: 8px; right: 8px; font-size: 18px; }
+
+  /* 已解锁状态 */
+  .gift.unlocked {
+    background: linear-gradient(160deg, rgba(196,47,47,.28), rgba(46,139,87,.22));
+    border-color: rgba(255,214,90,.45);
+    box-shadow: 0 6px 24px rgba(255,180,80,.22);
+    animation: giftPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes giftPulse { 0%,100% { box-shadow: 0 6px 22px rgba(255,180,80,.20); } 50% { box-shadow: 0 8px 30px rgba(255,180,80,.42); } }
+  .gift.unlocked .box { animation: bounce .9s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+  /* 提示条 */
+  .hint { margin-top: 22px; font-size: 12px; color: #d8c39a; letter-spacing: 1px; }
+
+  /* 弹窗 */
+  .modal-mask {
+    position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+    background: rgba(10, 6, 20, .72); backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none; transition: opacity .28s;
+    padding: 20px;
+  }
+  .modal-mask.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    width: 100%; max-width: 340px; background: linear-gradient(170deg, #fff7e8 0%, #ffe9c9 100%);
+    border-radius: 22px; padding: 30px 22px 24px; text-align: center; color: #6b1f2a;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45); transform: scale(.85) translateY(10px); transition: transform .3s cubic-bezier(.2,.9,.3,1.2);
+    position: relative; overflow: hidden;
+  }
+  .modal-mask.show .modal { transform: scale(1) translateY(0); }
+  .modal::before, .modal::after { content:""; position:absolute; width:120px; height:120px; border-radius:50%; background: rgba(231,76,60,.10); }
+  .modal::before { top:-50px; left:-50px; }
+  .modal::after { bottom:-50px; right:-50px; }
+  .modal .m-emoji { font-size: 52px; }
+  .modal .m-title { font-size: 19px; font-weight: 800; margin: 12px 0 8px; color: #b0242c; }
+  .modal .m-text { font-size: 16px; line-height: 1.7; color: #7c3a2a; word-break: break-word; }
+  .modal .m-text .big { font-size: 20px; font-weight: 800; color: #e6482e; }
+  .modal .m-btn {
+    margin-top: 20px; display: inline-block; padding: 11px 34px; border: none; border-radius: 30px;
+    background: linear-gradient(180deg, #e6482e, #c22a1d); color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 6px 16px rgba(198,42,29,.4); letter-spacing: 2px;
+  }
+  .modal .m-btn:active { transform: scale(.95); }
+
+  /* 转盘区域 */
+  .wheel-section { margin-top: 34px; display: none; animation: rise .6s ease-out; }
+  .wheel-section.show { display: block; }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  .wheel-title { font-size: 20px; font-weight: 800; color: #ffd76a; letter-spacing: 2px; }
+  .wheel-hint { margin-top: 8px; font-size: 13px; color: #f3ddb4; }
+
+  .wheel-wrap { position: relative; width: 300px; height: 300px; margin: 24px auto 0; }
+  .pointer {
+    position: absolute; top: -8px; left: 50%; transform: translateX(-50%); z-index: 5;
+    font-size: 30px; color: #ffd76a; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+  }
+  .wheel {
+    width: 300px; height: 300px; border-radius: 50%; position: relative;
+    background: conic-gradient(#e74c3c 0deg 90deg, #f39c12 90deg 180deg, #27ae60 180deg 270deg, #ff4d6d 270deg 360deg);
+    box-shadow: 0 0 0 10px #fff7e8, 0 0 0 14px #c9a24a, 0 14px 40px rgba(0,0,0,.5), inset 0 0 24px rgba(0,0,0,.25);
+    transition: transform 4.2s cubic-bezier(.12, .85, .2, 1);
+  }
+  .wheel .hub {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    width: 64px; height: 64px; border-radius: 50%; background: #fff7e8;
+    box-shadow: 0 0 0 6px #c9a24a; display: flex; align-items: center; justify-content: center; font-size: 30px;
+  }
+  .seg {
+    position: absolute; transform: translate(-50%,-50%); color: #fff; font-weight: 800;
+    font-size: 19px; letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,.35); white-space: nowrap;
+  }
+  .seg-100  { left: 220px; top: 80px; }
+  .seg-520  { left: 220px; top: 220px; }
+  .seg-999  { left: 80px;  top: 220px; }
+  .seg-1314 { left: 80px;  top: 80px; font-size: 21px; color: #fff; }
+
+  .spin-btn {
+    margin-top: 26px; padding: 14px 46px; border: none; border-radius: 40px; cursor: pointer;
+    background: linear-gradient(180deg, #ffd76a, #f0a830); color: #7a2a00; font-size: 17px; font-weight: 800;
+    letter-spacing: 3px; box-shadow: 0 8px 22px rgba(240,168,48,.5);
+    transition: transform .15s;
+  }
+  .spin-btn:active { transform: scale(.95); }
+  .spin-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* 结果弹窗里的爱心雨 */
+  .hearts { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .heart { position: absolute; animation: heartUp 1.8s ease-out forwards; font-size: 22px; }
+  @keyframes heartUp { 0% { transform: translateY(0) scale(.6); opacity: 1; } 100% { transform: translateY(-160px) scale(1.3); opacity: 0; } }
+
+  .footer { margin-top: 34px; font-size: 12px; color: rgba(255,255,255,.45); letter-spacing: 2px; }
+</style>
+</head>
+<body>
+  <div id="snow"></div>
+  <span class="deco" style="left:6%; top:12%; font-size:30px;">🎄</span>
+  <span class="deco" style="right:7%; top:9%; font-size:26px; animation-delay:.8s;">⭐</span>
+  <span class="deco" style="left:12%; top:44%; font-size:24px; animation-delay:1.5s;">🎅</span>
+  <span class="deco" style="right:9%; top:52%; font-size:26px; animation-delay:.4s;">🦌</span>
+  <span class="deco" style="left:8%; bottom:16%; font-size:24px; animation-delay:1.1s;">🎁</span>
+
+  <div class="wrap">
+    <div class="title">🎄 圣诞快乐 · 小涵 🎄</div>
+    <div class="subtitle">专属你的圣诞礼物，<b>请按顺序拆开</b> ❤️</div>
+    <div class="tree">🎄</div>
+
+    <div class="gifts">
+      <div class="gift unlocked" id="gift1" data-index="1">
+        <span class="lock-ico" id="lock1" style="display:none;">🔒</span>
+        <span class="box">🎁</span>
+        <span class="label">礼物 ①</span>
+        <span class="sub">先拆我</span>
+      </div>
+      <div class="gift locked" id="gift2" data-index="2">
+        <span class="lock-ico" id="lock2">🔒</span>
+        <span class="box">🎁</span>
+        <span class="label">礼物 ②</span>
+        <span class="sub">待解锁</span>
+      </div>
+      <div class="gift locked" id="gift3" data-index="3">
+        <span class="lock-ico" id="lock3">🔒</span>
+        <span class="box">🎁</span>
+        <span class="label">礼物 ③</span>
+        <span class="sub">终极惊喜</span>
+      </div>
+    </div>
+    <div class="hint">✨ 必须按顺序解锁，不能跳过的哦</div>
+
+    <!-- 转盘 -->
+    <div class="wheel-section" id="wheelSection">
+      <div class="wheel-title">🎡 幸运大转盘</div>
+      <div class="wheel-hint">点击按钮抽奖，今晚幸运之神一定眷顾你 ✨</div>
+      <div class="wheel-wrap">
+        <div class="pointer">▼</div>
+        <div class="wheel" id="wheel">
+          <span class="seg seg-100">100元</span>
+          <span class="seg seg-520">520元</span>
+          <span class="seg seg-999">999元</span>
+          <span class="seg seg-1314">1314元</span>
+          <div class="hub">🎁</div>
+        </div>
+      </div>
+      <button class="spin-btn" id="spinBtn">🎰 开始抽奖</button>
+    </div>
+
+    <div class="footer">MERRY CHRISTMAS · 小鸿 ❤ 小涵</div>
+  </div>
+
+  <!-- 通用弹窗 -->
+  <div class="modal-mask" id="modal">
+    <div class="modal">
+      <div class="m-emoji" id="mEmoji">🎁</div>
+      <div class="m-title" id="mTitle"></div>
+      <div class="m-text" id="mText"></div>
+      <button class="m-btn" id="mBtn">收下啦 ❤️</button>
+    </div>
+  </div>
+
+  <!-- 结果弹窗 -->
+  <div class="modal-mask" id="resultModal">
+    <div class="modal">
+      <div class="hearts" id="hearts"></div>
+      <div class="m-emoji">💰</div>
+      <div class="m-title">🎉 恭喜中奖 🎉</div>
+      <div class="m-text">
+        你抽中了<br><span class="big">1314 元</span><br>一生一世，只给小涵 ❤️
+      </div>
+      <button class="m-btn" id="resultBtn">太棒啦 🥰</button>
+    </div>
+  </div>
+
+<script>
+  // ---- 雪花 ----
+  (function createSnow() {
+    var box = document.getElementById('snow');
+    var n = window.innerWidth < 480 ? 45 : 70;
+    for (var i = 0; i < n; i++) {
+      var f = document.createElement('div');
+      f.className = 'snowflake';
+      f.textContent = '❄';
+      f.style.left = Math.random() * 100 + '%';
+      f.style.fontSize = (8 + Math.random() * 16) + 'px';
+      f.style.opacity = 0.35 + Math.random() * 0.6;
+      f.style.animationDuration = (7 + Math.random() * 8) + 's';
+      f.style.animationDelay = (Math.random() * 8) + 's';
+      box.appendChild(f);
+    }
+  })();
+
+  // ---- 礼物解锁状态 ----
+  var state = { 1: true, 2: false, 3: false };
+  var giftData = {
+    1: { emoji: '🎮', title: '礼物 ①', text: '今晚双人游戏局陪伴<br>🎮 只陪你玩 ❤️' },
+    2: { emoji: '💝', title: '礼物 ②', text: '小鸿跨年陪伴！<br>＋ <span class="big">神秘大礼物</span> 🎁' },
+    3: { emoji: '💖', title: '礼物 ③', text: '给最爱的小涵<br><span class="big">女友费</span> 💝' }
+  };
+
+  function unlock(index) {
+    if (state[index]) return;
+    state[index] = true;
+    var g = document.getElementById('gift' + index);
+    var l = document.getElementById('lock' + index);
+    g.classList.remove('locked');
+    g.classList.add('unlocked');
+    l.style.display = 'none';
+    var sub = g.querySelector('.sub');
+    if (sub) sub.textContent = '点击拆开';
+  }
+
+  function showModal(data, onClose) {
+    document.getElementById('mEmoji').textContent = data.emoji;
+    document.getElementById('mTitle').textContent = data.title;
+    document.getElementById('mText').innerHTML = data.text;
+    var mask = document.getElementById('modal');
+    mask.classList.add('show');
+    var btn = document.getElementById('mBtn');
+    btn.onclick = function () {
+      mask.classList.remove('show');
+      if (onClose) onClose();
+    };
+  }
+
+  function openGift(index) {
+    if (state[index]) {
+      if (index === 3) {
+        showModal(giftData[3], function () {
+          document.getElementById('wheelSection').classList.add('show');
+          document.getElementById('wheelSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } else {
+        showModal(giftData[index], function () { if (index + 1 <= 3) unlock(index + 1); });
+      }
+    } else {
+      // 还没解锁：提示
+      showModal({
+        emoji: '🔒',
+        title: '还没轮到哦',
+        text: '要先拆开<b>前面的礼物</b>，<br>才能打开这一份哦～'
+      });
+    }
+  }
+
+  document.getElementById('gift1').addEventListener('click', function () { openGift(1); });
+  document.getElementById('gift2').addEventListener('click', function () { openGift(2); });
+  document.getElementById('gift3').addEventListener('click', function () { openGift(3); });
+
+  // ---- 转盘 ----
+  var wheel = document.getElementById('wheel');
+  var spinBtn = document.getElementById('spinBtn');
+  var spinning = false;
+  var rotation = 0;
+
+  spinBtn.addEventListener('click', function () {
+    if (spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = '🎰 抽奖中…';
+
+    // 固定落在 1314（中心 315°），指针在顶部 0°，需要转 45° + 整数圈
+    var jitter = (Math.random() - 0.5) * 16;      // 轻微抖动，仍在 1314 扇形内
+    var fullSpins = 5 + Math.floor(Math.random() * 4); // 5~8 整圈
+    var delta = 45 + jitter + fullSpins * 360;
+    rotation += delta;
+    wheel.style.transform = 'rotate(' + rotation + 'deg)';
+
+    setTimeout(function () {
+      spinning = false;
+      spinBtn.disabled = false;
+      spinBtn.textContent = '🎰 再抽一次';
+      burstHearts();
+      document.getElementById('resultModal').classList.add('show');
+    }, 4400);
+  });
+
+  document.getElementById('resultBtn').onclick = function () {
+    document.getElementById('resultModal').classList.remove('show');
+  };
+
+  function burstHearts() {
+    var box = document.getElementById('hearts');
+    box.innerHTML = '';
+    var emojis = ['❤️', '💛', '💖', '✨', '💝'];
+    for (var i = 0; i < 16; i++) {
+      var h = document.createElement('span');
+      h.className = 'heart';
+      h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      h.style.left = (5 + Math.random() * 90) + '%';
+      h.style.bottom = '10px';
+      h.style.animationDelay = (Math.random() * 0.5) + 's';
+      h.style.fontSize = (16 + Math.random() * 16) + 'px';
+      box.appendChild(h);
+    }
+  }
+</script>
+</body>
+</html>
